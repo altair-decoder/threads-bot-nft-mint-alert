@@ -242,8 +242,12 @@
 
   //run immediately on startup
   // getProgress(true);
+  // console.log(threadsAPI)
   postFromApi('30m')
-  cron.schedule("0,30 * * * *", () => postFromApi('30m'));
+  cron.schedule("0 30 * * * *", function (){
+    threadsAPI.login();
+    postFromApi('30m')
+  });
   //schedule run at 12:02 AM (Midnight) every day
   // cron.schedule("2 0 * * *", () => getProgress(true));
 
