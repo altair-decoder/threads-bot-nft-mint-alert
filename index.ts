@@ -70,7 +70,13 @@
     MINTFUN -> https://mint.fun/ethereum/${contract}
     SEABOOK -> https://www.seabook.io/project/${contract}
     `
-      const imgUri = `${data.collections[0].imageUrl}`
+
+
+      // Market:
+      // 🔵OPENSEA -> https://opensea.io/assets/ethereum/${contract}
+      // 🟠BLUR    -> https://blur.io/collection/${contract}
+      //   // const imgUri = `${data.collections[0].imageUrl}`
+      const imgUri = `https://opensea.io/assets/ethereum/${contract}`
       // const dataApi = JSON.parse(resData);
       const didPostThread: boolean = await postThread(txtToPost, imgUri);
       // return true;
