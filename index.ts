@@ -10,7 +10,7 @@
 
   //get bot credentials
   const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN!);
-  const chatID:string = process.env.TELEGRAM_CHAT_ID!;
+  const chatID: string = process.env.TELEGRAM_CHAT_ID!;
 
   //get thread (instagram) account credentials
   const threadUsername: string = process.env.THREAD_USERNAME!;
@@ -40,156 +40,24 @@
     // deviceID: deviceID,
   });
 
-  const previousPostPath = path.join(__dirname, "previous-post.json");
 
-  //Map of month names to emojis that represent them
-  const monthEmojis: { [month: string]: string } = {
-    January: "❄️",
-    February: "💖",
-    March: "🌸",
-    April: "🌼",
-    May: "🌷",
-    June: "☀️",
-    July: "🎆",
-    August: "🌞",
-    September: "🍂",
-    October: "🎃",
-    November: "🦃",
-    December: "🎄",
-  };
-
-  //generate a ASCII progress bar based on the percentage provided
-  function generateProgressBar(percentage: number): string {
-    if (percentage < 0 || percentage > 100) {
-      throw new Error(
-        "Invalid percentage. Please provide a value between 0 and 100."
-      );
-    }
-
-    const completedLength = Math.floor((percentage / 100) * 16);
-    const remainingLength = 16 - completedLength;
-
-    const completedBlock = "▓".repeat(completedLength);
-    const remainingBlock = "░".repeat(remainingLength);
-
-    return completedBlock + remainingBlock;
-  }
-
-  //get the progress of the current year and month
-  async function getProgress(shouldPost = false) {
+  async function extractData(req: any) {
     try {
-      const previousPostData = await fs.readFile(previousPostPath);
-      const previousPost = JSON.parse(previousPostData);
-
-      const currentYear = new Date().getFullYear();
-      const startDate = new Date(currentYear, 0, 1); // January 1st of the current year
-      const endDate = new Date(currentYear + 1, 0, 1); // January 1st of the next year
-
-      const currentTime = new Date();
-      const elapsedTime = currentTime.getTime() - startDate.getTime();
-      const totalTime = endDate.getTime() - startDate.getTime();
-      const percentageElapsedYear = (elapsedTime / totalTime) * 100;
-      const percentageElapsedYearRounded = Math.floor(percentageElapsedYear);
-
-      //   console.log(
-      //     `Percentage of the current year elapsed: ${percentageElapsedYearRounded}%`
-      //   );
-
-      const progressBarYear = generateProgressBar(percentageElapsedYearRounded);
-
-      //   console.log(progressBarYear);
-
-      const shoudlPostYear = !(
-        previousPost.year.name == currentYear &&
-        percentageElapsedYearRounded == previousPost.year.percent
-      );
-
-      if (shouldPost && shoudlPostYear) {
-        var txtToPost=`Test BOT v1 at : ${currentTime}`;
-        const imgUri = ""
-        // var txtToPost=`💫 ${currentYear} is ${percentageElapsedYearRounded}% complete \n${progressBarYear}`;
-        const didPostThread: boolean = await postThread(txtToPost, imgUri);
-        if (didPostThread) {
-          previousPost.year.name = currentYear;
-          previousPost.year.percent = percentageElapsedYearRounded;
-        }
-      }
-
-      const currentMonth = currentTime.getMonth();
-      const startMonth = new Date(currentYear, currentMonth, 1); // First day of the current month
-      const endMonth = new Date(currentYear, currentMonth + 1, 1); // First day of the next month
-
-      const elapsedTimeMonth = currentTime.getTime() - startMonth.getTime();
-      const totalTimeMonth = endMonth.getTime() - startMonth.getTime();
-      const percentageElapsedMonth = (elapsedTimeMonth / totalTimeMonth) * 100;
-      const percentageElapsedMonthRounded = Math.floor(percentageElapsedMonth);
-
-      const currentMonthName = currentTime.toLocaleString("default", {
-        month: "long",
-      });
-
-      //   console.log(
-      //     `Percentage of the current ${currentMonthName} elapsed: ${percentageElapsedMonthRounded}%`
-      //   );
-
-      const progressBarMonth = generateProgressBar(
-        percentageElapsedMonthRounded
-      );
-
-      //   console.log(generateProgressBar(percentageElapsedMonthRounded));
-
-      const shoudlPostMonth = !(
-        previousPost.month.name == currentMonthName &&
-        percentageElapsedMonthRounded == previousPost.month.percent
-      );
-
-      if (shouldPost && shoudlPostMonth) {
-        const data = await extractData('30m');
-        const txtToPost = `Live Mint NFTs: ${data.collections} Contracts`;
-        console.log(data.collections[0].name)
-        console.log(txtToPost)
-        //  const txtToPost = `${monthEmojis[currentMonthName]} ${currentMonthName} is ${percentageElapsedMonthRounded}% complete \n${progressBarMonth}`
-        // const didPostThread: boolean = await postThread(txtToPost);
-        const didPostThread: boolean = true;
-        if (didPostThread) {
-          previousPost.month.name = currentMonthName;
-          previousPost.month.percent = percentageElapsedMonthRounded;
-        }
-      }
-
-      if (shouldPost) {
-        await fs.writeFile(previousPostPath, JSON.stringify(previousPost));
-      }
-    } catch (e) {
-      console.log(e);
-      if(process.env.TELEGRAM_BOT_TOKEN != "" &&  process.env.TELEGRAM_CHAT_ID!= ""){
-        try {
-          //send error message to telegram
-          bot.sendMessage(chatID, `Error: ${e}`);
-        } catch (e) {
-          console.log("could not send error message to telegram", e);
-        }
-      }else{
-        console.log("Not using telegram bot!");
-      }
-    }
-  }
-
-  async function extractData(req:any){
-    try{
-    const resData = await axios.get(`https://mint.fun/api/mintfun/feed/trending?range=${req}`)
-    // const dataApi = JSON.parse(resData);
-    return resData.data;
-    } catch (error:any) {
+      const resData = await axios.get(`https://mint.fun/api/mintfun/feed/trending?range=${req}`)
+      // const dataApi = JSON.parse(resData);
+      return resData.data;
+    } catch (error: any) {
       console.error('Error posting advice:', error.message);
     }
   }
-  async function postFromApi(req:any){
-    try{
-    const data = await extractData(req);
-    const contractArray = data.collections[0].name.split(":");
-    const contract = contractArray[1];
-    const txtToPost = `☀️ LIVE MINT ONCHAIN ☀️
+  async function postFromApi(req: any) {
+    try {
+      // threadsAPI.login();
+      const data = await extractData(req);
+      const contractArray = data.collections[0].contract.split(":");
+      const contract = contractArray[1];
+      console.log('Contract:' + contract)
+      const txtToPost = `☀️ LIVE MINT ONCHAIN ☀️
     Top mint NFTs: ${data.collections[0].name}
     Total Value: ${data.collections[0].totalValue}Eth
     Total Mint Last Hour: ${data.collections[0].mintsLastHour}
@@ -201,12 +69,16 @@
     Mint at: 
     MINTFUN -> https://mint.fun/ethereum/${contract}
     SEABOOK -> https://www.seabook.io/project/${contract}
+
+    Market:
+    OPENSEA -> https://opensea.io/assets/ethereum/${contract}
+    Blur    -> https://blur.io/collection/${contract}
     `
-    const imgUri = `${data.collections[0].imageUrl}`
-    // const dataApi = JSON.parse(resData);
-    const didPostThread: boolean = await postThread(txtToPost, imgUri);
-    // return true;
-    } catch (error:any) {
+      const imgUri = `${data.collections[0].imageUrl}`
+      // const dataApi = JSON.parse(resData);
+      const didPostThread: boolean = await postThread(txtToPost, imgUri);
+      // return true;
+    } catch (error: any) {
       console.error('Error posting advice:', error.message);
     }
   }
@@ -226,14 +98,14 @@
     }
     console.log("posting to thread...");
     // Create a new thread post using the (unofficial) Threads API
-    const didPost: boolean = await threadsAPI.publish({text, url});
+    const didPost: boolean = await threadsAPI.publish({ text, url });
 
     const msgText = `${didPost ? "Posted" : "ERROR: Could not post"}: ${text}`;
 
     console.log("posted thread");
 
     //after posting
-    if(process.env.TELEGRAM_BOT_TOKEN != "" &&  process.env.TELEGRAM_CHAT_ID!= ""){
+    if (process.env.TELEGRAM_BOT_TOKEN != "" && process.env.TELEGRAM_CHAT_ID != "") {
       await bot.sendMessage(chatID, msgText ?? "No message");
     }
 
@@ -244,7 +116,7 @@
   // getProgress(true);
   // console.log(threadsAPI)
   postFromApi('30m')
-  cron.schedule("0 30 * * * *", function (){
+  cron.schedule("0 30 * * * *", function () {
     threadsAPI.login();
     postFromApi('30m')
   });
